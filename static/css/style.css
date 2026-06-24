@@ -1,0 +1,10 @@
+[data-bs-theme="dark"] {
+    --bs-primary: #0dcaf0;
+    --bs-primary-rgb: 13, 202, 240;
+    --bs-body-bg: #121212;
+    --bs-card-bg: #1e1e1e;
+}
+
+.text-cyan { 
+    color: var(--bs-primary) !important; 
+}

@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, render_template
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 import sqlite3
 
@@ -92,6 +92,87 @@ def register_company():
         return jsonify({"msg": "email already exists"}), 400
     finally:
         conn.close()
+
+# admin check helper
+def is_admin():
+    claims = get_jwt()
+    return claims.get('role') == 'Admin'
+
+# get admin stats
+@app.route('/api/admin/stats', methods=['GET'])
+@jwt_required()
+def admin_stats():
+    if not is_admin(): 
+        return jsonify({"msg": "unauthorized"}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # fetch stats
+    cur.execute("SELECT COUNT(*) FROM students")
+    students_count = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM companies")
+    companies_count = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM job_positions")
+    jobs_count = cur.fetchone()[0]
+    cur.execute("SELECT COUNT(*) FROM applications")
+    apps_count = cur.fetchone()[0]
+    
+    conn.close()
+    
+    return jsonify({
+        "students": students_count,
+        "companies": companies_count,
+        "jobs": jobs_count,
+        "applications": apps_count
+    })
+
+# get and search companies
+@app.route('/api/admin/companies', methods=['GET'])
+@jwt_required()
+def get_companies():
+    if not is_admin(): 
+        return jsonify({"msg": "unauthorized"}), 403
+    
+    search = request.args.get('search', '')
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # search logic
+    query = """
+        SELECT c.id, c.name, c.industry, c.is_approved, u.is_active 
+        FROM companies c 
+        JOIN users u ON c.user_id = u.id
+        WHERE c.name LIKE ? OR c.industry LIKE ?
+    """
+    cur.execute(query, (f'%{search}%', f'%{search}%'))
+    companies = [dict(row) for row in cur.fetchall()]
+    
+    conn.close()
+    return jsonify(companies)
+
+# toggle company approval
+@app.route('/api/admin/companies/<int:company_id>/<action>', methods=['POST'])
+@jwt_required()
+def manage_company(company_id, action):
+    if not is_admin(): 
+        return jsonify({"msg": "unauthorized"}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # update status
+    if action == 'approve':
+        cur.execute("UPDATE companies SET is_approved = 1 WHERE id = ?", (company_id,))
+    elif action == 'deactivate':
+        cur.execute("SELECT user_id FROM companies WHERE id = ?", (company_id,))
+        user = cur.fetchone()
+        if user:
+            cur.execute("UPDATE users SET is_active = 0 WHERE id = ?", (user['user_id'],))
+            
+    conn.commit()
+    conn.close()
+    return jsonify({"msg": "success"})
 
 if __name__ == '__main__':
     app.run(debug=True)
