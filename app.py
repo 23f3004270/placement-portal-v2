@@ -174,5 +174,85 @@ def manage_company(company_id, action):
     conn.close()
     return jsonify({"msg": "success"})
 
+# get company dashboard and jobs
+@app.route('/api/company/data', methods=['GET'])
+@jwt_required()
+def get_company_data():
+    if get_jwt().get('role') != 'Company': 
+        return jsonify({"msg": "unauthorized"}), 403
+    
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # check approval
+    cur.execute("SELECT id, is_approved FROM companies WHERE user_id = ?", (get_jwt_identity(),))
+    company = cur.fetchone()
+    
+    if not company or not company['is_approved']:
+        conn.close()
+        return jsonify({"is_approved": False})
+        
+    comp_id = company['id']
+    
+    # fetch company jobs
+    cur.execute("SELECT * FROM job_positions WHERE company_id = ?", (comp_id,))
+    jobs = [dict(row) for row in cur.fetchall()]
+    
+    conn.close()
+    return jsonify({"is_approved": True, "jobs": jobs, "company_id": comp_id})
+
+# post a new job
+@app.route('/api/company/jobs', methods=['POST'])
+@jwt_required()
+def post_job():
+    data = request.get_json()
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # insert job
+    cur.execute("""
+        INSERT INTO job_positions (company_id, title, description, salary, skills_required, status) 
+        VALUES (?, ?, ?, ?, ?, 'Active')
+    """, (data['company_id'], data['title'], data['description'], data['salary'], data['skills_required']))
+    
+    conn.commit()
+    conn.close()
+    return jsonify({"msg": "job posted successfully"}), 201
+
+# get applicants for a specific job
+@app.route('/api/company/jobs/<int:job_id>/applicants', methods=['GET'])
+@jwt_required()
+def get_applicants(job_id):
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # join applications with student profiles
+    query = """
+        SELECT a.id as app_id, a.status, s.name, s.education, s.skills
+        FROM applications a
+        JOIN students s ON a.student_id = s.id
+        WHERE a.job_id = ?
+    """
+    cur.execute(query, (job_id,))
+    applicants = [dict(row) for row in cur.fetchall()]
+    
+    conn.close()
+    return jsonify(applicants)
+
+# update application status (shortlist/reject/select)
+@app.route('/api/company/applications/<int:app_id>/status', methods=['PUT'])
+@jwt_required()
+def update_app_status(app_id):
+    data = request.get_json()
+    conn = get_db()
+    cur = conn.cursor()
+    
+    # update status
+    cur.execute("UPDATE applications SET status = ? WHERE id = ?", (data['status'], app_id))
+    
+    conn.commit()
+    conn.close()
+    return jsonify({"msg": "status updated"})
+
 if __name__ == '__main__':
     app.run(debug=True)

@@ -146,7 +146,115 @@
         </div>
 
         <div v-if="role === 'Company'">
-            <div class="alert alert-warning bg-dark border-warning text-warning">Welcome. Awaiting Admin approval to post placement drives.</div>
+            
+            <div class="alert alert-warning bg-dark border-warning text-warning" v-if="!companyData.is_approved">
+                <h4>Approval Pending</h4>
+                <p>Your company profile is currently awaiting admin approval. You will be able to post placement drives once approved.</p>
+            </div>
+
+            <div v-else>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="text-cyan">Company Dashboard</h2>
+                    <button class="btn btn-info fw-bold text-dark" @click="showJobForm = !showJobForm">
+                        {{ showJobForm ? 'Cancel Post' : '+ Post New Job' }}
+                    </button>
+                </div>
+
+                <div class="card shadow border-info mb-4" v-if="showJobForm">
+                    <div class="card-header bg-dark border-info text-info">Create Placement Drive</div>
+                    <div class="card-body bg-dark">
+                        <form @submit.prevent="submitJob">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Job Title</label>
+                                    <input type="text" class="form-control bg-dark text-light border-secondary" v-model="jobForm.title" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Salary Package</label>
+                                    <input type="text" class="form-control bg-dark text-light border-secondary" v-model="jobForm.salary" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label>Required Skills</label>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" v-model="jobForm.skills_required" placeholder="e.g. Python, Vue, SQL">
+                            </div>
+                            <div class="mb-3">
+                                <label>Job Description & Benefits</label>
+                                <textarea class="form-control bg-dark text-light border-secondary" rows="3" v-model="jobForm.description"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-success fw-bold">Publish Job</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card shadow border-secondary mb-4">
+                    <div class="card-header bg-dark border-secondary text-cyan">Your Placement Drives</div>
+                    <div class="card-body p-0">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Job Title</th>
+                                    <th>Salary</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="job in companyData.jobs" :key="job.id">
+                                    <td>{{ job.title }}</td>
+                                    <td>{{ job.salary }}</td>
+                                    <td><span class="badge bg-primary">{{ job.status }}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info" @click="viewApplicants(job.id, job.title)">View Applicants</button>
+                                    </td>
+                                </tr>
+                                <tr v-if="companyData.jobs.length === 0">
+                                    <td colspan="4" class="text-center text-muted">No jobs posted yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card shadow border-secondary mt-4" v-if="viewingJobTitle">
+                    <div class="card-header bg-dark border-secondary text-cyan">
+                        Applicants for: <span class="text-white">{{ viewingJobTitle }}</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-dark table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Skills</th>
+                                    <th>Current Status</th>
+                                    <th>Update Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="app in currentApplicants" :key="app.app_id">
+                                    <td>{{ app.name }}</td>
+                                    <td>{{ app.skills || 'Not provided' }}</td>
+                                    <td>
+                                        <span class="badge" 
+                                            :class="{'bg-secondary': app.status === 'Applied', 'bg-info': app.status === 'Shortlisted', 'bg-success': app.status === 'Selected', 'bg-danger': app.status === 'Rejected'}">
+                                            {{ app.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info me-1" v-if="app.status === 'Applied'" @click="updateAppStatus(app.app_id, 'Shortlisted')">Shortlist</button>
+                                        <button class="btn btn-sm btn-outline-success me-1" v-if="app.status === 'Shortlisted'" @click="updateAppStatus(app.app_id, 'Selected')">Select</button>
+                                        <button class="btn btn-sm btn-outline-danger" v-if="app.status !== 'Rejected' && app.status !== 'Selected'" @click="updateAppStatus(app.app_id, 'Rejected')">Reject</button>
+                                    </td>
+                                </tr>
+                                <tr v-if="currentApplicants.length === 0">
+                                    <td colspan="4" class="text-center text-muted">No applications received yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
         </div>
 
         <div v-if="role === 'Student'">

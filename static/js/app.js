@@ -12,12 +12,20 @@ createApp({
             regForm: { name: '', email: '', password: '' },
             adminStats: null,
             companies: [],
-            searchQuery: ''
+            searchQuery: '',
+            companyData: { is_approved: false, jobs: [], company_id: null },
+            jobForm: { title: '', description: '', salary: '', skills_required: '' },
+            showJobForm: false,
+            currentApplicants: [],
+            viewingJobTitle: ''
         };
     },
     mounted() {
         if (this.role === 'Admin') {
             this.fetchAdminData();
+        }
+        if (this.role === 'Company') {
+            this.fetchCompanyData();
         }
     },
     methods: {
@@ -40,6 +48,9 @@ createApp({
                 
                 if (this.role === 'Admin') {
                     this.fetchAdminData();
+                }
+                if (this.role === 'Company') {
+                    this.fetchCompanyData();
                 }
             } else {
                 this.error = data.msg;
@@ -97,6 +108,47 @@ createApp({
             });
             if (res.ok) {
                 this.fetchCompanies(); 
+            }
+        },
+        async fetchCompanyData() {
+            const res = await fetch('/api/company/data', {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (res.ok) {
+                this.companyData = await res.json();
+            }
+        },
+        async submitJob() {
+            this.jobForm.company_id = this.companyData.company_id;
+            const res = await fetch('/api/company/jobs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                body: JSON.stringify(this.jobForm)
+            });
+            if (res.ok) {
+                this.showJobForm = false;
+                this.jobForm = { title: '', description: '', salary: '', skills_required: '' };
+                this.fetchCompanyData(); // refresh jobs list
+            }
+        },
+        async viewApplicants(jobId, jobTitle) {
+            this.viewingJobTitle = jobTitle;
+            const res = await fetch(`/api/company/jobs/${jobId}/applicants`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (res.ok) {
+                this.currentApplicants = await res.json();
+            }
+        },
+        async updateAppStatus(appId, status) {
+            const res = await fetch(`/api/company/applications/${appId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                const app = this.currentApplicants.find(a => a.app_id === appId);
+                if (app) app.status = status;
             }
         }
     }
