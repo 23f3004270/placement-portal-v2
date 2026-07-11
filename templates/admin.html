@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        [data-bs-theme="dark"] {
+            --bs-primary: #0dcaf0;
+            --bs-primary-rgb: 13, 202, 240;
+            --bs-body-bg: #121212;
+            --bs-card-bg: #1e1e1e;
+        }
+        .text-cyan { color: var(--bs-primary) !important; }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="container mt-5">
+        <!-- navigation bar -->
+        <nav class="navbar navbar-dark bg-dark shadow-sm mb-4 p-3 rounded border border-secondary">
+            <span class="navbar-brand mb-0 h1 text-cyan">PPA V2 - Admin Dashboard</span>
+            <button class="btn btn-outline-danger btn-sm" @click="logout">Logout</button>
+        </nav>
+
+        <!-- stats counters -->
+        <div class="row mb-4" v-if="stats">
+            <div class="col-md-3">
+                <div class="card border-primary text-center shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">Students</h5>
+                        <h2 class="card-text text-primary">{{ stats.students }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-success text-center shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">Companies</h5>
+                        <h2 class="card-text text-success">{{ stats.companies }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-warning text-center shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">Jobs</h5>
+                        <h2 class="card-text text-warning">{{ stats.jobs }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-danger text-center shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title text-muted">Applications</h5>
+                        <h2 class="card-text text-danger">{{ stats.applications }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- manage companies section -->
+        <div class="card shadow-sm border-secondary">
+            <div class="card-header bg-dark border-bottom border-secondary d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 text-cyan">Manage Companies</h5>
+                <input type="text" class="form-control w-25 bg-dark text-light border-secondary" placeholder="Search companies..." v-model="searchQuery" @input="fetchCompanies">
+            </div>
+            <div class="card-body">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Industry</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="company in companies" :key="company.id">
+                            <td>{{ company.name }}</td>
+                            <td>{{ company.industry || 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-success" v-if="company.is_approved">Approved</span>
+                                <span class="badge bg-warning text-dark" v-else>Pending</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success me-2" v-if="!company.is_approved" @click="manageCompany(company.id, 'approve')">Approve</button>
+                                <button class="btn btn-sm btn-outline-danger" v-if="company.is_active" @click="manageCompany(company.id, 'deactivate')">Deactivate</button>
+                                <span class="text-danger small" v-else>Deactivated</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    token: localStorage.getItem('token'),
+                    stats: null,
+                    companies: [],
+                    searchQuery: ''
+                };
+            },
+            mounted() {
+                if (!this.token || localStorage.getItem('role') !== 'Admin') {
+                    window.location.href = '/';
+                } else {
+                    this.fetchStats();
+                    this.fetchCompanies();
+                }
+            },
+            methods: {
+                async fetchStats() {
+                    const res = await fetch('/api/admin/stats', {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    if (res.ok) this.stats = await res.json();
+                },
+                async fetchCompanies() {
+                    const res = await fetch(`/api/admin/companies?search=${this.searchQuery}`, {
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    if (res.ok) this.companies = await res.json();
+                },
+                async manageCompany(id, action) {
+                    const res = await fetch(`/api/admin/companies/${id}/${action}`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    });
+                    if (res.ok) {
+                        this.fetchStats();
+                        this.fetchCompanies();
+                    }
+                },
+                logout() {
+                    localStorage.clear();
+                    window.location.href = '/';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

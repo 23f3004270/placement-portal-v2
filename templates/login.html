@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Portal - Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        [data-bs-theme="dark"] {
+            --bs-primary: #0dcaf0;
+            --bs-primary-rgb: 13, 202, 240;
+            --bs-body-bg: #121212;
+            --bs-card-bg: #1e1e1e;
+        }
+        .text-cyan { color: var(--bs-primary) !important; }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                
+                <!-- login card -->
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h3 class="card-title text-center mb-4 text-cyan">Login</h3>
+                        
+                        <div class="alert alert-danger" v-if="error">{{ error }}</div>
+                        <div class="alert alert-success" v-if="success">{{ success }}</div>
+                        
+                        <form @submit.prevent="handleLogin">
+                            <div class="mb-3">
+                                <label>Email</label>
+                                <input type="email" class="form-control" v-model="loginForm.email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label>Password</label>
+                                <input type="password" class="form-control" v-model="loginForm.password" required>
+                            </div>
+                            <button type="submit" class="btn btn-info w-100 fw-bold text-dark">Login</button>
+                        </form>
+                        
+                        <hr class="border-secondary">
+                        <p class="text-center mb-2 text-muted">New here?</p>
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-outline-info btn-sm" @click="registerMode = 'Student'">Register Student</button>
+                            <button class="btn btn-outline-info btn-sm" @click="registerMode = 'Company'">Register Company</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- registration card -->
+                <div class="card shadow mt-3 border-info" v-if="registerMode">
+                    <div class="card-body">
+                        <h5 class="card-title text-cyan">Register as {{ registerMode }}</h5>
+                        <form @submit.prevent="handleRegister">
+                            <div class="mb-3">
+                                <label>Name</label>
+                                <input type="text" class="form-control" v-model="regForm.name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label>Email</label>
+                                <input type="email" class="form-control" v-model="regForm.email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label>Password</label>
+                                <input type="password" class="form-control" v-model="regForm.password" required>
+                            </div>
+                            <button type="submit" class="btn btn-info w-100 fw-bold text-dark">Register</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    registerMode: null,
+                    error: null,
+                    success: null,
+                    loginForm: { email: '', password: '' },
+                    regForm: { name: '', email: '', password: '' }
+                };
+            },
+            methods: {
+                async handleLogin() {
+                    this.error = null;
+                    const res = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.loginForm)
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok) {
+                        localStorage.setItem('token', data.token);
+                        localStorage.setItem('role', data.role);
+                        
+                        // routing logic handled by frontend redirect matching role routes
+                        window.location.href = '/' + data.role.toLowerCase();
+                    } else {
+                        this.error = data.msg;
+                    }
+                },
+                async handleRegister() {
+                    this.error = null;
+                    this.success = null;
+                    const endpoint = this.registerMode === 'Student' ? '/api/register/student' : '/api/register/company';
+                    
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.regForm)
+                    });
+                    const data = await res.json();
+
+                    if (res.ok) {
+                        this.success = "Registration successful! You can now log in.";
+                        this.registerMode = null;
+                        this.regForm = { name: '', email: '', password: '' };
+                    } else {
+                        this.error = data.msg;
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
