@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    role TEXT NOT NULL, -- 'Admin', 'Company', 'Student'
+    role TEXT NOT NULL,
     is_active BOOLEAN DEFAULT 1
 );
 
@@ -24,7 +24,10 @@ CREATE TABLE IF NOT EXISTS students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    education TEXT,
+    ug_degree TEXT,
+    ug_specialization TEXT,
+    pg_degree TEXT,
+    pg_specialization TEXT,
     cgpa REAL,
     skills TEXT,
     resume_link TEXT,
@@ -37,9 +40,9 @@ CREATE TABLE IF NOT EXISTS job_positions (
     company_id INTEGER NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
-    salary TEXT,
+    salary INTEGER,
     skills_required TEXT,
-    status TEXT DEFAULT 'Pending', -- 'Pending', 'Active', 'Closed'
+    status TEXT DEFAULT 'Pending',
     FOREIGN KEY (company_id) REFERENCES companies (id)
 );
 
@@ -48,7 +51,8 @@ CREATE TABLE IF NOT EXISTS applications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
     job_id INTEGER NOT NULL,
-    status TEXT DEFAULT 'Applied', -- 'Applied', 'Shortlisted', 'Selected', 'Rejected'
+    status TEXT DEFAULT 'Applied',
+    remarks TEXT DEFAULT '',
     applied_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students (id),
     FOREIGN KEY (job_id) REFERENCES job_positions (id)

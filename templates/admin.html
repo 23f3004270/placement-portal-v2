@@ -3,92 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>EZPlace - Admin Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
         [data-bs-theme="dark"] {
+            --bs-body-bg: #1c1c22;
+            --bs-card-bg: #25252d;
             --bs-primary: #0dcaf0;
-            --bs-primary-rgb: 13, 202, 240;
-            --bs-body-bg: #121212;
-            --bs-card-bg: #1e1e1e;
         }
         .text-cyan { color: var(--bs-primary) !important; }
+        .card { background-color: var(--bs-card-bg) !important; border: 1px solid #32323d !important; border-radius: 10px; }
+        .nav-link { cursor: pointer; }
     </style>
 </head>
 <body>
 
+    {% raw %}
     <div id="app" class="container mt-5">
-        <!-- navigation bar -->
+        <!-- navbar -->
         <nav class="navbar navbar-dark bg-dark shadow-sm mb-4 p-3 rounded border border-secondary">
-            <span class="navbar-brand mb-0 h1 text-cyan">PPA V2 - Admin Dashboard</span>
+            <span class="navbar-brand mb-0 h1 text-cyan fw-bold">EZPlace</span>
+            <span class="navbar-text text-light fw-bold me-auto ps-3 border-start border-secondary">Admin Command Center</span>
             <button class="btn btn-outline-danger btn-sm" @click="logout">Logout</button>
         </nav>
 
-        <!-- stats counters -->
+        <!-- stats -->
         <div class="row mb-4" v-if="stats">
-            <div class="col-md-3">
-                <div class="card border-primary text-center shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted">Students</h5>
-                        <h2 class="card-text text-primary">{{ stats.students }}</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-success text-center shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted">Companies</h5>
-                        <h2 class="card-text text-success">{{ stats.companies }}</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-warning text-center shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted">Jobs</h5>
-                        <h2 class="card-text text-warning">{{ stats.jobs }}</h2>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="card border-danger text-center shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title text-muted">Applications</h5>
-                        <h2 class="card-text text-danger">{{ stats.applications }}</h2>
-                    </div>
-                </div>
-            </div>
+            <div class="col-md-3"><div class="card text-center shadow-sm"><div class="card-body"><h5 class="text-muted">Students</h5><h2 class="text-primary">{{ stats.students }}</h2></div></div></div>
+            <div class="col-md-3"><div class="card text-center shadow-sm"><div class="card-body"><h5 class="text-muted">Companies</h5><h2 class="text-success">{{ stats.companies }}</h2></div></div></div>
+            <div class="col-md-3"><div class="card text-center shadow-sm"><div class="card-body"><h5 class="text-muted">Active Drives</h5><h2 class="text-warning">{{ stats.jobs }}</h2></div></div></div>
+            <div class="col-md-3"><div class="card text-center shadow-sm"><div class="card-body"><h5 class="text-muted">Applications</h5><h2 class="text-danger">{{ stats.applications }}</h2></div></div></div>
         </div>
 
-        <!-- manage companies section -->
-        <div class="card shadow-sm border-secondary">
-            <div class="card-header bg-dark border-bottom border-secondary d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 text-cyan">Manage Companies</h5>
-                <input type="text" class="form-control w-25 bg-dark text-light border-secondary" placeholder="Search companies..." v-model="searchQuery" @input="fetchCompanies">
+        <!-- tab nav -->
+        <ul class="nav nav-tabs mb-3 border-secondary">
+            <li class="nav-item"><a class="nav-link" :class="{active: activeTab === 'companies', 'text-cyan': activeTab === 'companies'}" @click="switchTab('companies')">Companies</a></li>
+            <li class="nav-item"><a class="nav-link" :class="{active: activeTab === 'students', 'text-cyan': activeTab === 'students'}" @click="switchTab('students')">Students</a></li>
+            <li class="nav-item"><a class="nav-link" :class="{active: activeTab === 'drives', 'text-cyan': activeTab === 'drives'}" @click="switchTab('drives')">Placement Drives</a></li>
+        </ul>
+
+        <!-- companies panel -->
+        <div class="card shadow-sm" v-if="activeTab === 'companies'">
+            <div class="card-header bg-black border-bottom border-secondary d-flex justify-content-between align-items-center p-3">
+                <h5 class="mb-0 text-cyan fw-bold">Manage Companies</h5>
+                <input type="text" class="form-control w-25 bg-dark text-light border-secondary form-control-sm" placeholder="Search companies..." v-model="searchQuery" @input="fetchCompanies">
             </div>
-            <div class="card-body">
-                <table class="table table-dark table-hover mb-0">
+            <div class="card-body p-0">
+                <table class="table table-dark table-hover mb-0 align-middle">
                     <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Industry</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
+                        <tr><th>Name</th><th>Industry</th><th>Status</th><th>Actions</th></tr>
                     </thead>
                     <tbody>
                         <tr v-for="company in companies" :key="company.id">
-                            <td>{{ company.name }}</td>
-                            <td>{{ company.industry || 'N/A' }}</td>
+                            <td>{{ company.name }}</td><td>{{ company.industry || 'N/A' }}</td>
                             <td>
-                                <span class="badge bg-success" v-if="company.is_approved">Approved</span>
+                                <span class="badge bg-danger" v-if="!company.is_active">Deactivated</span>
+                                <span class="badge bg-success text-dark" v-else-if="company.is_approved">Approved</span>
                                 <span class="badge bg-warning text-dark" v-else>Pending</span>
                             </td>
                             <td>
-                                <button class="btn btn-sm btn-outline-success me-2" v-if="!company.is_approved" @click="manageCompany(company.id, 'approve')">Approve</button>
-                                <button class="btn btn-sm btn-outline-danger" v-if="company.is_active" @click="manageCompany(company.id, 'deactivate')">Deactivate</button>
-                                <span class="text-danger small" v-else>Deactivated</span>
+                                <button class="btn btn-sm btn-outline-success me-1" v-if="!company.is_approved && company.is_active" @click="manageCompany(company.id, 'approve')">Approve</button>
+                                <button class="btn btn-sm btn-outline-warning me-1" v-if="company.is_approved && company.is_active" @click="manageCompany(company.id, 'reject')">Reject</button>
+                                <button class="btn btn-sm btn-outline-warning me-1" v-if="company.is_active" @click="manageCompany(company.id, 'deactivate')">Deactivate</button>
+                                <button class="btn btn-sm btn-outline-success me-1" v-else @click="manageCompany(company.id, 'activate')">Activate</button>
+                                <button class="btn btn-sm btn-outline-danger" @click="manageCompany(company.id, 'delete')">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- students panel -->
+        <div class="card shadow-sm" v-if="activeTab === 'students'">
+            <div class="card-header bg-black border-bottom border-secondary d-flex justify-content-between align-items-center p-3">
+                <h5 class="mb-0 text-cyan fw-bold">Manage Students</h5>
+                <input type="text" class="form-control w-25 bg-dark text-light border-secondary form-control-sm" placeholder="Search name or skills..." v-model="searchQuery" @input="fetchStudents">
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead>
+                        <tr><th>Name</th><th>Education</th><th>CGPA</th><th>Skills</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="student in students" :key="student.id">
+                            <td>{{ student.name }}</td><td>{{ student.education }}</td><td>{{ student.cgpa || 'N/A' }}</td><td>{{ student.skills || 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-success" v-if="student.is_active">Active</span>
+                                <span class="badge bg-danger" v-else>Deactivated</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-warning me-1" v-if="student.is_active" @click="manageStudent(student.id, 'deactivate')">Deactivate</button>
+                                <button class="btn btn-sm btn-outline-success me-1" v-else @click="manageStudent(student.id, 'activate')">Activate</button>
+                                <button class="btn btn-sm btn-outline-danger" @click="manageStudent(student.id, 'delete')">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- drives panel -->
+        <div class="card shadow-sm" v-if="activeTab === 'drives'">
+            <div class="card-header bg-black border-bottom border-secondary p-3"><h5 class="mb-0 text-cyan fw-bold">Approve Placement Drives</h5></div>
+            <div class="card-body p-0">
+                <table class="table table-dark table-hover mb-0 align-middle">
+                    <thead>
+                        <tr><th>Company</th><th>Job Title</th><th>Annual Package</th><th>Status</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="job in jobs" :key="job.id">
+                            <td class="text-info fw-bold">{{ job.company_name }}</td><td>{{ job.title }}</td><td>{{ job.salary }} Lakhs</td>
+                            <td>
+                                <span class="badge bg-success" v-if="job.status === 'Active'">Approved</span>
+                                <span class="badge bg-danger" v-else-if="job.status === 'Rejected'">Rejected</span>
+                                <span class="badge bg-warning text-dark" v-else>Pending Approval</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-success me-1" v-if="job.status !== 'Active'" @click="manageJob(job.id, 'approve')">Approve</button>
+                                <button class="btn btn-sm btn-outline-danger" v-if="job.status !== 'Rejected'" @click="manageJob(job.id, 'reject')">Reject</button>
                             </td>
                         </tr>
                     </tbody>
@@ -96,17 +130,20 @@
             </div>
         </div>
     </div>
+    {% endraw %}
 
     <script>
         const { createApp } = Vue;
-
         createApp({
             data() {
                 return {
                     token: localStorage.getItem('token'),
                     stats: null,
                     companies: [],
-                    searchQuery: ''
+                    students: [],
+                    jobs: [],
+                    searchQuery: '',
+                    activeTab: 'companies'
                 };
             },
             mounted() {
@@ -118,32 +155,44 @@
                 }
             },
             methods: {
+                switchTab(tab) {
+                    this.activeTab = tab;
+                    this.searchQuery = '';
+                    if (tab === 'companies') this.fetchCompanies();
+                    if (tab === 'students') this.fetchStudents();
+                    if (tab === 'drives') this.fetchJobs();
+                },
                 async fetchStats() {
-                    const res = await fetch('/api/admin/stats', {
-                        headers: { 'Authorization': `Bearer ${this.token}` }
-                    });
+                    const res = await fetch('/api/admin/stats', { headers: { 'Authorization': `Bearer ${this.token}` } });
                     if (res.ok) this.stats = await res.json();
                 },
                 async fetchCompanies() {
-                    const res = await fetch(`/api/admin/companies?search=${this.searchQuery}`, {
-                        headers: { 'Authorization': `Bearer ${this.token}` }
-                    });
+                    const res = await fetch(`/api/admin/companies?search=${this.searchQuery}`, { headers: { 'Authorization': `Bearer ${this.token}` } });
                     if (res.ok) this.companies = await res.json();
                 },
-                async manageCompany(id, action) {
-                    const res = await fetch(`/api/admin/companies/${id}/${action}`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${this.token}` }
-                    });
-                    if (res.ok) {
-                        this.fetchStats();
-                        this.fetchCompanies();
-                    }
+                async fetchStudents() {
+                    const res = await fetch(`/api/admin/students?search=${this.searchQuery}`, { headers: { 'Authorization': `Bearer ${this.token}` } });
+                    if (res.ok) this.students = await res.json();
                 },
-                logout() {
-                    localStorage.clear();
-                    window.location.href = '/';
-                }
+                async fetchJobs() {
+                    const res = await fetch('/api/admin/jobs', { headers: { 'Authorization': `Bearer ${this.token}` } });
+                    if (res.ok) this.jobs = await res.json();
+                },
+                async manageCompany(id, action) {
+                    if (action === 'delete' && !confirm('Permanently delete company?')) return;
+                    const res = await fetch(`/api/admin/companies/${id}/${action}`, { method: 'POST', headers: { 'Authorization': `Bearer ${this.token}` } });
+                    if (res.ok) { this.fetchStats(); this.fetchCompanies(); }
+                },
+                async manageStudent(id, action) {
+                    if (action === 'delete' && !confirm('Permanently delete student history?')) return;
+                    const res = await fetch(`/api/admin/students/${id}/${action}`, { method: 'POST', headers: { 'Authorization': `Bearer ${this.token}` } });
+                    if (res.ok) { this.fetchStats(); this.fetchStudents(); }
+                },
+                async manageJob(id, action) {
+                    const res = await fetch(`/api/admin/jobs/${id}/${action}`, { method: 'POST', headers: { 'Authorization': `Bearer ${this.token}` } });
+                    if (res.ok) { this.fetchStats(); this.fetchJobs(); }
+                },
+                logout() { localStorage.clear(); window.location.href = '/'; }
             }
         }).mount('#app');
     </script>

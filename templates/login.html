@@ -3,72 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Placement Portal - Login</title>
+    <title>EZPlace - Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
         [data-bs-theme="dark"] {
+            --bs-body-bg: #1c1c22;
+            --bs-card-bg: #25252d;
             --bs-primary: #0dcaf0;
-            --bs-primary-rgb: 13, 202, 240;
-            --bs-body-bg: #121212;
-            --bs-card-bg: #1e1e1e;
         }
         .text-cyan { color: var(--bs-primary) !important; }
+        .card { background-color: var(--bs-card-bg) !important; border: 1px solid #32323d !important; border-radius: 12px; }
+        .left-panel { background: linear-gradient(135deg, #121215 0%, #22222b 100%); border-right: 1px solid #2d2d35; }
+        .form-control { border-radius: 8px; }
     </style>
 </head>
 <body>
 
-    <div id="app" class="container mt-5">
-        <div class="row justify-content-center">
-            <div class="col-md-5">
+    {% raw %}
+    <div id="app" class="container-fluid min-vh-100 d-flex p-0">
+        <!-- left panel -->
+        <div class="col-md-6 d-none d-md-flex flex-column justify-content-center align-items-center p-5 left-panel text-center">
+            <h1 class="display-2 fw-bold text-cyan mb-3">EZPlace</h1>
+            <p class="fs-4 text-muted border-top border-secondary pt-3 px-4">Never been more easy.</p>
+        </div>
+
+        <!-- right forms panel -->
+        <div class="col-12 col-md-6 d-flex justify-content-center align-items-center p-4">
+            <div class="w-100" style="max-width: 450px;">
                 
-                <!-- login card -->
-                <div class="card shadow">
+                <div class="alert alert-danger shadow-sm" v-if="error">{{ error }}</div>
+                <div class="alert alert-success shadow-sm" v-if="success">{{ success }}</div>
+
+                <!-- login block -->
+                <div class="card shadow-lg p-3" v-if="activeState === 'login'">
                     <div class="card-body">
-                        <h3 class="card-title text-center mb-4 text-cyan">Login</h3>
-                        
-                        <div class="alert alert-danger" v-if="error">{{ error }}</div>
-                        <div class="alert alert-success" v-if="success">{{ success }}</div>
-                        
+                        <h3 class="card-title fw-bold text-cyan mb-4">Login</h3>
                         <form @submit.prevent="handleLogin">
                             <div class="mb-3">
-                                <label>Email</label>
-                                <input type="email" class="form-control" v-model="loginForm.email" required>
+                                <label class="form-label small text-muted">Email</label>
+                                <input type="email" class="form-control bg-dark text-light border-secondary" v-model="loginForm.email" required>
                             </div>
-                            <div class="mb-3">
-                                <label>Password</label>
-                                <input type="password" class="form-control" v-model="loginForm.password" required>
+                            <div class="mb-4">
+                                <label class="form-label small text-muted">Password</label>
+                                <input type="password" class="form-control bg-dark text-light border-secondary" v-model="loginForm.password" required>
                             </div>
-                            <button type="submit" class="btn btn-info w-100 fw-bold text-dark">Login</button>
+                            <button type="submit" class="btn btn-info w-100 fw-bold text-dark py-2 shadow">Sign In</button>
                         </form>
-                        
-                        <hr class="border-secondary">
-                        <p class="text-center mb-2 text-muted">New here?</p>
-                        <div class="d-flex justify-content-between">
-                            <button class="btn btn-outline-info btn-sm" @click="registerMode = 'Student'">Register Student</button>
-                            <button class="btn btn-outline-info btn-sm" @click="registerMode = 'Company'">Register Company</button>
+                        <hr class="border-secondary my-4">
+                        <div class="d-flex gap-2 justify-content-center">
+                            <button class="btn btn-outline-secondary btn-sm" @click="activeState = 'student-reg'">Student Registration</button>
+                            <button class="btn btn-outline-secondary btn-sm" @click="activeState = 'company-reg'">Company Registration</button>
                         </div>
                     </div>
                 </div>
 
-                <!-- registration card -->
-                <div class="card shadow mt-3 border-info" v-if="registerMode">
+                <!-- student reg block -->
+                <div class="card shadow-lg p-3" v-if="activeState === 'student-reg'">
                     <div class="card-body">
-                        <h5 class="card-title text-cyan">Register as {{ registerMode }}</h5>
-                        <form @submit.prevent="handleRegister">
+                        <h3 class="card-title fw-bold text-cyan mb-4">Student Registration</h3>
+                        <form @submit.prevent="handleRegister('Student')">
                             <div class="mb-3">
-                                <label>Name</label>
-                                <input type="text" class="form-control" v-model="regForm.name" required>
+                                <label class="form-label small text-muted">Full Name</label>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" v-model="regForm.name" required>
                             </div>
                             <div class="mb-3">
-                                <label>Email</label>
-                                <input type="email" class="form-control" v-model="regForm.email" required>
+                                <label class="form-label small text-muted">Email</label>
+                                <input type="email" class="form-control bg-dark text-light border-secondary" v-model="regForm.email" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label small text-muted">Password</label>
+                                <input type="password" class="form-control bg-dark text-light border-secondary" v-model="regForm.password" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow mb-3">Register Student</button>
+                            <button type="button" class="btn btn-link text-cyan w-100 btn-sm text-decoration-none" @click="backToLogin">Back to Login</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- company reg block -->
+                <div class="card shadow-lg p-3" v-if="activeState === 'company-reg'">
+                    <div class="card-body">
+                        <h3 class="card-title fw-bold text-cyan mb-4">Company Registration</h3>
+                        <form @submit.prevent="handleRegister('Company')">
+                            <div class="mb-3">
+                                <label class="form-label small text-muted">Company Name</label>
+                                <input type="text" class="form-control bg-dark text-light border-secondary" v-model="regForm.name" required>
                             </div>
                             <div class="mb-3">
-                                <label>Password</label>
-                                <input type="password" class="form-control" v-model="regForm.password" required>
+                                <label class="form-label small text-muted">Email</label>
+                                <input type="email" class="form-control bg-dark text-light border-secondary" v-model="regForm.email" required>
                             </div>
-                            <button type="submit" class="btn btn-info w-100 fw-bold text-dark">Register</button>
+                            <div class="mb-4">
+                                <label class="form-label small text-muted">Password</label>
+                                <input type="password" class="form-control bg-dark text-light border-secondary" v-model="regForm.password" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow mb-3">Register Company</button>
+                            <button type="button" class="btn btn-link text-cyan w-100 btn-sm text-decoration-none" @click="backToLogin">Back to Login</button>
                         </form>
                     </div>
                 </div>
@@ -76,14 +107,14 @@
             </div>
         </div>
     </div>
+    {% endraw %}
 
     <script>
         const { createApp } = Vue;
-
         createApp({
             data() {
                 return {
-                    registerMode: null,
+                    activeState: 'login',
                     error: null,
                     success: null,
                     loginForm: { email: '', password: '' },
@@ -91,6 +122,11 @@
                 };
             },
             methods: {
+                backToLogin() {
+                    this.error = null;
+                    this.success = null;
+                    this.activeState = 'login';
+                },
                 async handleLogin() {
                     this.error = null;
                     const res = await fetch('/api/login', {
@@ -99,32 +135,27 @@
                         body: JSON.stringify(this.loginForm)
                     });
                     const data = await res.json();
-                    
                     if (res.ok) {
                         localStorage.setItem('token', data.token);
                         localStorage.setItem('role', data.role);
-                        
-                        // routing logic handled by frontend redirect matching role routes
                         window.location.href = '/' + data.role.toLowerCase();
                     } else {
                         this.error = data.msg;
                     }
                 },
-                async handleRegister() {
+                async handleRegister(role) {
                     this.error = null;
                     this.success = null;
-                    const endpoint = this.registerMode === 'Student' ? '/api/register/student' : '/api/register/company';
-                    
+                    const endpoint = role === 'Student' ? '/api/register/student' : '/api/register/company';
                     const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(this.regForm)
                     });
                     const data = await res.json();
-
                     if (res.ok) {
-                        this.success = "Registration successful! You can now log in.";
-                        this.registerMode = null;
+                        this.success = `${role} registered successfully! You can log in now.`;
+                        this.activeState = 'login';
                         this.regForm = { name: '', email: '', password: '' };
                     } else {
                         this.error = data.msg;

@@ -3,154 +3,171 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Company Dashboard</title>
+    <title>EZPlace - Company Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
         [data-bs-theme="dark"] {
+            --bs-body-bg: #1c1c22;
+            --bs-card-bg: #25252d;
             --bs-primary: #0dcaf0;
-            --bs-primary-rgb: 13, 202, 240;
-            --bs-body-bg: #121212;
-            --bs-card-bg: #1e1e1e;
         }
         .text-cyan { color: var(--bs-primary) !important; }
+        .card { background-color: var(--bs-card-bg) !important; border: 1px solid #32323d !important; border-radius: 10px; }
+        .skill-tag { display: inline-block; background-color: #1a1a22; border: 1px solid #0dcaf0; color: #0dcaf0; padding: 2px 8px; margin: 2px; border-radius: 4px; font-size: 0.85rem; }
+        .skill-tag .remove-btn { cursor: pointer; margin-left: 5px; color: #ff6b6b; font-weight: bold; }
     </style>
 </head>
 <body>
 
+    {% raw %}
     <div id="app" class="container mt-5">
-        <!-- navigation bar -->
+        <!-- navbar -->
         <nav class="navbar navbar-dark bg-dark shadow-sm mb-4 p-3 rounded border border-secondary">
-            <span class="navbar-brand mb-0 h1 text-cyan">PPA V2 - Company Dashboard</span>
+            <span class="navbar-brand mb-0 h1 text-cyan fw-bold">EZPlace</span>
+            <span class="navbar-text text-light fw-bold me-auto ps-3 border-start border-secondary" v-if="companyData.name">
+                Let's hire the best talent for {{ companyData.name }}
+            </span>
             <button class="btn btn-outline-danger btn-sm" @click="logout">Logout</button>
         </nav>
 
         <!-- pending approval state -->
-        <div class="alert alert-warning bg-dark border-warning text-warning" v-if="!companyData.is_approved">
-            <h4>Approval Pending</h4>
-            <p>Your company profile is awaiting admin approval. You can post placement drives once approved.</p>
+        <div class="alert alert-warning bg-black border-warning text-warning shadow-sm" v-if="!companyData.is_approved">
+            <h4 class="fw-bold">Approval Pending</h4>
+            <p class="mb-0">Your company profile is awaiting admin approval. You can post placement drives once approved.</p>
         </div>
 
-        <!-- approved company workspace -->
         <div v-else>
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="text-cyan">Dashboard</h2>
+                <h2 class="text-cyan fw-bold">Dashboard</h2>
                 <button class="btn btn-info fw-bold text-dark" @click="showJobForm = !showJobForm">
                     {{ showJobForm ? 'Cancel' : '+ Post New Job' }}
                 </button>
             </div>
 
-            <!-- job posting form -->
-            <div class="card shadow border-info mb-4" v-if="showJobForm">
-                <div class="card-header bg-dark border-info text-info">Create Placement Drive</div>
-                <div class="card-body bg-dark">
+            <!-- job publishing form -->
+            <div class="card shadow mb-4" v-if="showJobForm">
+                <div class="card-header bg-black border-bottom border-secondary text-info fw-semibold">Post a New Job</div>
+                <div class="card-body">
                     <form @submit.prevent="submitJob">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label>Job Title</label>
+                                <label class="form-label small text-muted">Job Title</label>
                                 <input type="text" class="form-control bg-dark text-light border-secondary" v-model="jobForm.title" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label>Salary Package</label>
-                                <input type="text" class="form-control bg-dark text-light border-secondary" v-model="jobForm.salary" required>
+                                <label class="form-label small text-muted">Annual Package (in Lakhs)</label>
+                                <input type="number" min="1" class="form-control bg-dark text-light border-secondary" v-model="jobForm.salary" required placeholder="e.g. 12">
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label>Required Skills</label>
-                            <input type="text" class="form-control bg-dark text-light border-secondary" v-model="jobForm.skills_required" placeholder="e.g. Python, SQL">
+                            <label class="form-label small text-muted">Required Skills (Press Enter)</label>
+                            <input type="text" class="form-control bg-dark text-light border-secondary mb-2" placeholder="e.g. Python" v-model="skillInput" @keydown.enter.prevent="addSkillTag">
+                            <div class="d-flex flex-wrap border border-secondary p-2 rounded bg-dark min-height">
+                                <span class="skill-tag" v-for="(tag, idx) in skillTags" :key="idx">
+                                    {{ tag }} <span class="remove-btn" @click="removeSkillTag(idx)">&times;</span>
+                                </span>
+                                <span class="text-muted small" v-if="skillTags.length === 0">No skills added yet</span>
+                            </div>
                         </div>
                         <div class="mb-3">
-                            <label>Job Description</label>
-                            <textarea class="form-control bg-dark text-light border-secondary" rows="3" v-model="jobForm.description"></textarea>
+                            <label class="form-label small text-muted">Job Description</label>
+                            <textarea class="form-control bg-dark text-light border-secondary" rows="3" v-model="jobForm.description" required></textarea>
                         </div>
-                        <button type="submit" class="btn btn-success fw-bold">Publish Job</button>
+                        <button type="submit" class="btn btn-success fw-bold px-4">Publish Job Drive</button>
                     </form>
                 </div>
             </div>
 
-            <!-- job listings -->
-            <div class="card shadow border-secondary mb-4">
-                <div class="card-header bg-dark border-secondary text-cyan">Your Placement Drives</div>
+            <!-- jobs listing -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-black border-bottom border-secondary text-cyan fw-semibold">Your Placement Drives</div>
                 <div class="card-body p-0">
-                    <table class="table table-dark table-hover mb-0">
+                    <table class="table table-dark table-hover mb-0 align-middle">
                         <thead>
-                            <tr>
-                                <th>Job Title</th>
-                                <th>Salary</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
+                            <tr><th>Job Title</th><th>Annual Package</th><th>Status</th><th>Actions</th></tr>
                         </thead>
                         <tbody>
                             <tr v-for="job in companyData.jobs" :key="job.id">
                                 <td>{{ job.title }}</td>
-                                <td>{{ job.salary }}</td>
-                                <td><span class="badge bg-primary">{{ job.status }}</span></td>
+                                <td>{{ job.salary }} Lakhs</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-info" @click="viewApplicants(job.id, job.title)">View Applicants</button>
+                                    <span class="badge bg-success text-dark" v-if="job.status === 'Active'">Approved & Live</span>
+                                    <span class="badge bg-danger" v-else-if="job.status === 'Rejected'">Rejected</span>
+                                    <span class="badge bg-warning text-dark" v-else>Pending Admin Approval</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" :disabled="job.status !== 'Active'" @click="viewApplicants(job.id, job.title, job.skills_required)">View Applicants</button>
                                 </td>
                             </tr>
-                            <tr v-if="companyData.jobs.length === 0">
-                                <td colspan="4" class="text-center text-muted">No jobs posted yet.</td>
-                            </tr>
+                            <tr v-if="companyData.jobs.length === 0"><td colspan="4" class="text-center text-muted py-3">No jobs posted yet.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- applicant management workspace -->
-            <div class="card shadow border-secondary mt-4" v-if="viewingJobTitle">
-                <div class="card-header bg-dark border-secondary text-cyan">
+            <!-- applicant log workspace container -->
+            <div class="card shadow mt-4" v-if="viewingJobTitle">
+                <div class="card-header bg-black border-bottom border-secondary text-cyan fw-semibold">
                     Applicants for: <span class="text-white">{{ viewingJobTitle }}</span>
                 </div>
                 <div class="card-body p-0">
-                    <table class="table table-dark table-hover mb-0">
+                    <table class="table table-dark table-hover mb-0 align-middle">
                         <thead>
-                            <tr>
-                                <th>Student Name</th>
-                                <th>Skills</th>
-                                <th>Current Status</th>
-                                <th>Actions</th>
-                            </tr>
+                            <tr><th>Student Name</th><th>Education</th><th>Skills</th><th>Skill Affinity</th><th>Resume</th><th>Remarks</th><th>Status</th><th>Actions</th></tr>
                         </thead>
                         <tbody>
                             <tr v-for="app in currentApplicants" :key="app.app_id">
                                 <td>{{ app.name }}</td>
-                                <td>{{ app.skills || 'N/A' }}</td>
                                 <td>
-                                    <span class="badge" 
-                                        :class="{'bg-secondary': app.status === 'Applied', 'bg-info': app.status === 'Shortlisted', 'bg-success': app.status === 'Selected', 'bg-danger': app.status === 'Rejected'}">
-                                        {{ app.status }}
-                                    </span>
+                                    <div class="small fw-semibold text-light">UG: {{ app.ug_degree }} ({{ app.ug_specialization }})</div>
+                                    <div class="small text-muted" v-if="app.pg_degree">PG: {{ app.pg_degree }} ({{ app.pg_specialization }})</div>
+                                    <div class="small text-info">CGPA: {{ app.cgpa }}</div>
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-info me-1" v-if="app.status === 'Applied'" @click="updateAppStatus(app.app_id, 'Shortlisted')">Shortlist</button>
-                                    <button class="btn btn-sm btn-outline-success me-1" v-if="app.status === 'Shortlisted'" @click="updateAppStatus(app.app_id, 'Selected')">Select</button>
-                                    <button class="btn btn-sm btn-outline-danger" v-if="app.status !== 'Rejected' && app.status !== 'Selected'" @click="updateAppStatus(app.app_id, 'Rejected')">Reject</button>
+                                    <span class="badge bg-secondary border border-dark me-1" v-for="s in (app.skills ? app.skills.split(',') : [])">{{ s }}</span>
+                                </td>
+                                <td class="fw-bold text-warning">{{ calculateAffinity(app.skills, currentJobSkills) }}</td>
+                                <td><a :href="app.resume_link" target="_blank" class="btn btn-sm btn-link text-info p-0 text-decoration-none fw-bold">View Resume</a></td>
+                                <td class="small text-muted">{{ app.remarks || 'No remarks' }}</td>
+                                <td>
+                                    <span class="badge" :class="{'bg-secondary text-light': app.status === 'Applied', 'bg-info text-dark': app.status === 'Shortlisted', 'bg-warning text-dark': app.status === 'Interview', 'bg-primary text-light': app.status === 'Offer', 'bg-success text-dark': app.status === 'Placed', 'bg-danger text-light': app.status === 'Rejected'}">{{ app.status }}</span>
+                                </td>
+                                <td>
+                                    <div class="mb-1"><input type="text" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="Remarks (optional)" v-model="remarksForm[app.app_id]"></div>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <button class="btn btn-xs btn-outline-info btn-sm shadow-sm" v-if="app.status === 'Applied'" @click="updateAppStatus(app.app_id, 'Shortlisted')">Shortlist</button>
+                                        <button class="btn btn-xs btn-outline-warning btn-sm shadow-sm" v-if="app.status === 'Shortlisted'" @click="updateAppStatus(app.app_id, 'Interview')">Interview</button>
+                                        <button class="btn btn-xs btn-outline-primary btn-sm shadow-sm" v-if="app.status === 'Interview'" @click="updateAppStatus(app.app_id, 'Offer')">Make Offer</button>
+                                        <button class="btn btn-xs btn-outline-success btn-sm shadow-sm" v-if="app.status === 'Offer'" @click="updateAppStatus(app.app_id, 'Placed')">Confirm Placement</button>
+                                        <button class="btn btn-xs btn-outline-danger btn-sm shadow-sm" v-if="['Rejected', 'Placed'].indexOf(app.status) === -1" @click="updateAppStatus(app.app_id, 'Rejected')">Reject</button>
+                                    </div>
                                 </td>
                             </tr>
-                            <tr v-if="currentApplicants.length === 0">
-                                <td colspan="4" class="text-center text-muted">No applications received yet.</td>
-                            </tr>
+                            <tr v-if="currentApplicants.length === 0"><td colspan="8" class="text-center text-muted py-3">No applications received yet.</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
+    {% endraw %}
 
     <script>
         const { createApp } = Vue;
-
         createApp({
             data() {
                 return {
                     token: localStorage.getItem('token'),
-                    companyData: { is_approved: false, jobs: [], company_id: null },
+                    companyData: { is_approved: false, name: '', jobs: [], company_id: null },
                     jobForm: { title: '', description: '', salary: '', skills_required: '' },
+                    skillInput: '',
+                    skillTags: [],
                     showJobForm: false,
                     currentApplicants: [],
-                    viewingJobTitle: ''
+                    viewingJobTitle: '',
+                    currentJobSkills: '',
+                    remarksForm: {}
                 };
             },
             mounted() {
@@ -161,47 +178,57 @@
                 }
             },
             methods: {
+                addSkillTag() {
+                    const skill = this.skillInput.trim();
+                    if (skill && !this.skillTags.includes(skill)) {
+                        this.skillTags.push(skill);
+                    }
+                    this.skillInput = '';
+                },
+                removeSkillTag(idx) {
+                    this.skillTags.splice(idx, 1);
+                },
+                calculateAffinity(studentSkillsStr, jobSkillsStr) {
+                    if (!studentSkillsStr || !jobSkillsStr) return '0%';
+                    const job = jobSkillsStr.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
+                    const student = studentSkillsStr.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
+                    if (job.length === 0) return '100%';
+                    const matching = job.filter(s => student.includes(s)).length;
+                    return `${matching}/${job.length} (${Math.round((matching / job.length) * 100)}%)`;
+                },
                 async fetchCompanyData() {
-                    const res = await fetch('/api/company/data', {
-                        headers: { 'Authorization': `Bearer ${this.token}` }
-                    });
+                    const res = await fetch('/api/company/data', { headers: { 'Authorization': `Bearer ${this.token}` } });
                     if (res.ok) this.companyData = await res.json();
                 },
                 async submitJob() {
+                    this.jobForm.skills_required = this.skillTags.join(',');
                     this.jobForm.company_id = this.companyData.company_id;
-                    const res = await fetch('/api/company/jobs', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                        body: JSON.stringify(this.jobForm)
+                    const res = await fetch('/api/company/jobs', { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` }, 
+                        body: JSON.stringify(this.jobForm) 
                     });
-                    if (res.ok) {
-                        this.showJobForm = false;
-                        this.jobForm = { title: '', description: '', salary: '', skills_required: '' };
-                        this.fetchCompanyData();
-                    }
+                    if (res.ok) { this.showJobForm = false; this.jobForm = { title: '', description: '', salary: '', skills_required: '' }; this.skillTags = []; this.fetchCompanyData(); } else { const data = await res.json(); alert(data.msg); }
                 },
-                async viewApplicants(jobId, jobTitle) {
+                async viewApplicants(jobId, jobTitle, jobSkills) {
                     this.viewingJobTitle = jobTitle;
-                    const res = await fetch(`/api/company/jobs/${jobId}/applicants`, {
-                        headers: { 'Authorization': `Bearer ${this.token}` }
-                    });
-                    if (res.ok) this.currentApplicants = await res.json();
+                    this.currentJobSkills = jobSkills;
+                    const res = await fetch(`/api/company/jobs/${jobId}/applicants`, { headers: { 'Authorization': `Bearer ${this.token}` } });
+                    if (res.ok) { this.currentApplicants = await res.json(); this.currentApplicants.forEach(app => { this.remarksForm[app.app_id] = ''; }); }
                 },
                 async updateAppStatus(appId, status) {
-                    const res = await fetch(`/api/company/applications/${appId}/status`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` },
-                        body: JSON.stringify({ status })
+                    const res = await fetch('/api/company/applications/' + appId + '/status', { 
+                        method: 'PUT', 
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` }, 
+                        body: JSON.stringify({ status: status, remarks: this.remarksForm[appId] || '' }) 
                     });
                     if (res.ok) {
                         const app = this.currentApplicants.find(a => a.app_id === appId);
-                        if (app) app.status = status;
+                        if (app) { app.status = status; app.remarks = this.remarksForm[appId]; }
+                        this.remarksForm[appId] = '';
                     }
                 },
-                logout() {
-                    localStorage.clear();
-                    window.location.href = '/';
-                }
+                logout() { localStorage.clear(); window.location.href = '/'; }
             }
         }).mount('#app');
     </script>
