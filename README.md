@@ -153,7 +153,7 @@ celery -A app.celery beat --loglevel=info
 
 ## Access the Application
 
-Open your browser and navigate to:
+Open browser and navigate to:
 
 ```text
 http://127.0.0.1:5000/
