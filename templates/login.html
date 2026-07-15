@@ -12,16 +12,28 @@
             --bs-card-bg: #25252d;
             --bs-primary: #0dcaf0;
         }
-        .text-cyan { color: var(--bs-primary) !important; }
-        .card { background-color: var(--bs-card-bg) !important; border: 1px solid #32323d !important; border-radius: 12px; }
-        .left-panel { background: linear-gradient(135deg, #121215 0%, #22222b 100%); border-right: 1px solid #2d2d35; }
-        .form-control { border-radius: 8px; }
+        .text-cyan { 
+            color: var(--bs-primary) !important; 
+        }
+        .card { 
+            background-color: var(--bs-card-bg) !important; 
+            border: 1px solid #32323d !important; 
+            border-radius: 12px; 
+        }
+        .left-panel { 
+            background: linear-gradient(135deg, #121215 0%, #22222b 100%); 
+            border-right: 1px solid #2d2d35; 
+        }
+        .form-control { 
+            border-radius: 8px; 
+        }
     </style>
 </head>
 <body>
 
     {% raw %}
     <div id="app" class="container-fluid min-vh-100 d-flex p-0">
+        
         <!-- left panel -->
         <div class="col-md-6 d-none d-md-flex flex-column justify-content-center align-items-center p-5 left-panel text-center">
             <h1 class="display-2 fw-bold text-cyan mb-3">EZPlace</h1>
@@ -111,6 +123,7 @@
 
     <script>
         const { createApp } = Vue;
+        
         createApp({
             data() {
                 return {
@@ -127,13 +140,14 @@
                     this.success = null;
                     this.activeState = 'login';
                 },
-                async handleLogin() {
+                async handleLogin() { // handle user login
                     this.error = null;
                     const res = await fetch('/api/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(this.loginForm)
                     });
+                    
                     const data = await res.json();
                     if (res.ok) {
                         localStorage.setItem('token', data.token);
@@ -143,15 +157,17 @@
                         this.error = data.msg;
                     }
                 },
-                async handleRegister(role) {
+                async handleRegister(role) { // handle user registration
                     this.error = null;
                     this.success = null;
                     const endpoint = role === 'Student' ? '/api/register/student' : '/api/register/company';
+                    
                     const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(this.regForm)
                     });
+                    
                     const data = await res.json();
                     if (res.ok) {
                         this.success = `${role} registered successfully! You can log in now.`;

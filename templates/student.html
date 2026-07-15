@@ -12,27 +12,50 @@
             --bs-card-bg: #25252d;
             --bs-primary: #0dcaf0;
         }
-        .text-cyan { color: var(--bs-primary) !important; }
-        .card { background-color: var(--bs-card-bg) !important; border: 1px solid #32323d !important; border-radius: 10px; }
-        .skill-tag { display: inline-block; background-color: #1a1a22; border: 1px solid #0dcaf0; color: #0dcaf0; padding: 2px 8px; margin: 2px; border-radius: 4px; font-size: 0.85rem; }
-        .skill-tag .remove-btn { cursor: pointer; margin-left: 5px; color: #ff6b6b; font-weight: bold; }
+        .text-cyan { 
+            color: var(--bs-primary) !important; 
+        }
+        .card { 
+            background-color: var(--bs-card-bg) !important; 
+            border: 1px solid #32323d !important; 
+            border-radius: 10px; 
+        }
+        .skill-tag { 
+            display: inline-block; 
+            background-color: #1a1a22; 
+            border: 1px solid #0dcaf0; 
+            color: #0dcaf0; 
+            padding: 2px 8px; 
+            margin: 2px; 
+            border-radius: 4px; 
+            font-size: 0.85rem; 
+        }
+        .skill-tag .remove-btn { 
+            cursor: pointer; 
+            margin-left: 5px; 
+            color: #ff6b6b; 
+            font-weight: bold; 
+        }
     </style>
 </head>
 <body>
 
     {% raw %}
     <div id="app" class="container mt-5">
+        
         <!-- navbar -->
         <nav class="navbar navbar-dark bg-dark shadow-sm mb-4 p-3 rounded border border-secondary">
             <span class="navbar-brand mb-0 h1 text-cyan fw-bold">EZPlace</span>
             <span class="navbar-text text-light fw-bold me-auto ps-3 border-start border-secondary" v-if="profile.name">
-                Welcome back, {{ profile.name }} | Career Hub
+                Welcome back, {{ profile.name }}
             </span>
+            <button class="btn btn-outline-info btn-sm me-2 fw-bold text-cyan" @click="triggerCsvExport">Export History (CSV)</button>
             <button class="btn btn-outline-danger btn-sm" @click="logout">Logout</button>
         </nav>
 
         <div class="row">
-            <!-- profile management block -->
+            
+            <!-- profile panel -->
             <div class="col-md-4 mb-4">
                 <div class="card shadow">
                     <div class="card-header bg-black border-bottom border-secondary text-cyan fw-bold">Edit Profile</div>
@@ -43,7 +66,6 @@
                                 <input type="text" class="form-control bg-dark text-light border-secondary" v-model="profile.name" required>
                             </div>
                             
-                            <!-- ug details -->
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="small text-muted form-label">UG Degree</label>
@@ -61,7 +83,6 @@
                                 </div>
                             </div>
 
-                            <!-- pg details -->
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label class="small text-muted form-label">PG Degree (Optional)</label>
@@ -85,7 +106,6 @@
                                 <input type="number" step="0.01" min="0" max="10" class="form-control bg-dark text-light border-secondary" v-model="profile.cgpa" required>
                             </div>
 
-                            <!-- skills input tags -->
                             <div class="mb-3">
                                 <label class="small text-muted form-label">Skills (Press Enter)</label>
                                 <input type="text" class="form-control bg-dark text-light border-secondary mb-2" placeholder="Add a skill..." v-model="skillInput" @keydown.enter.prevent="addSkillTag">
@@ -107,10 +127,10 @@
                 </div>
             </div>
 
-            <!-- right tables framework column -->
+            <!-- data display panel -->
             <div class="col-md-8">
                 
-                <!-- placement slot active drives -->
+                <!-- placement drives table -->
                 <div class="card shadow mb-4">
                     <div class="card-header bg-black border-bottom border-secondary d-flex justify-content-between align-items-center p-3">
                         <h5 class="mb-0 text-cyan fw-bold">Active Placement Drives</h5>
@@ -119,7 +139,14 @@
                     <div class="card-body p-0">
                         <table class="table table-dark table-hover mb-0 align-middle">
                             <thead>
-                                <tr><th>Company</th><th>Role</th><th>Annual Package</th><th>Required Skills</th><th>Skill Affinity</th><th>Action</th></tr>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>Role</th>
+                                    <th>Annual Package</th>
+                                    <th>Required Skills</th>
+                                    <th>Skill Affinity</th>
+                                    <th>Action</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="job in jobs" :key="job.id">
@@ -127,40 +154,62 @@
                                     <td>{{ job.title }}</td>
                                     <td><span class="text-success fw-bold">{{ job.salary }} Lakhs</span></td>
                                     <td>
-                                        <span class="badge bg-secondary border border-dark me-1" v-for="s in (job.skills_required ? job.skills_required.split(',') : [])">{{ s }}</span>
+                                        <span class="badge bg-secondary border border-dark me-1" v-for="s in (job.skills_required ? job.skills_required.split(',') : [])">
+                                            {{ s }}
+                                        </span>
                                     </td>
-                                    <td class="fw-bold text-warning">{{ calculateAffinity(job.skills_required) }}</td>
-                                    <td><button class="btn btn-sm btn-outline-info shadow-sm fw-medium" @click="applyForJob(job.id)">Apply</button></td>
+                                    <td class="fw-bold text-cyan">{{ calculateAffinity(job.skills_required) }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-info shadow-sm fw-medium" @click="applyForJob(job.id)">Apply</button>
+                                    </td>
                                 </tr>
-                                <tr v-if="jobs.length === 0"><td colspan="6" class="text-center text-muted py-3">No active placement opportunities currently.</td></tr>
+                                <tr v-if="jobs.length === 0">
+                                    <td colspan="6" class="text-center text-muted py-3">No active placement opportunities currently.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- application log values history list -->
+                <!-- application history table -->
                 <div class="card shadow">
                     <div class="card-header bg-black border-bottom border-secondary text-cyan fw-bold p-3">Application History</div>
                     <div class="card-body p-0">
                         <table class="table table-dark table-hover mb-0 align-middle">
                             <thead>
-                                <tr><th>Company</th><th>Position</th><th>Skill Affinity</th><th>Remarks</th><th>Status</th><th>Actions</th></tr>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>Position</th>
+                                    <th>Skill Affinity</th>
+                                    <th>Remarks</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="app in applications" :key="app.id">
                                     <td>{{ app.company_name }}</td>
                                     <td>{{ app.title }}</td>
-                                    <td class="fw-bold text-warning">{{ calculateAffinity(app.skills_required) }}</td>
+                                    <td class="fw-bold text-cyan">{{ calculateAffinity(app.skills_required) }}</td>
                                     <td class="small text-muted font-monospace">{{ app.remarks || 'No updates added yet' }}</td>
                                     <td>
-                                        <span class="badge" :class="{'bg-secondary text-light': app.status === 'Applied','bg-info text-dark': app.status === 'Shortlisted','bg-warning text-dark': app.status === 'Interview','bg-primary text-light': app.status === 'Offer','bg-danger text-light': app.status === 'Rejected','bg-success text-dark': app.status === 'Placed'}">{{ app.status }}</span>
+                                        <span class="badge" :class="{
+                                            'bg-secondary text-light': app.status === 'Applied',
+                                            'bg-info text-dark': app.status === 'Shortlisted',
+                                            'bg-warning text-dark': app.status === 'Interview',
+                                            'bg-primary text-light': app.status === 'Offer',
+                                            'bg-danger text-light': app.status === 'Rejected',
+                                            'bg-success text-dark': app.status === 'Placed'
+                                        }">{{ app.status }}</span>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-success fw-bold shadow-sm animate-fade" v-if="app.status === 'Offer'" @click="acceptJobOffer(app.id)">Accept Offer</button>
+                                        <button class="btn btn-sm btn-success fw-bold shadow-sm" v-if="app.status === 'Offer'" @click="acceptJobOffer(app.id)">Accept Offer</button>
                                         <span class="text-muted small" v-else>N/A</span>
                                     </td>
                                 </tr>
-                                <tr v-if="applications.length === 0"><td colspan="6" class="text-center text-muted py-3">You haven't applied to any drives yet.</td></tr>
+                                <tr v-if="applications.length === 0">
+                                    <td colspan="6" class="text-center text-muted py-3">You haven't applied to any drives yet.</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -173,6 +222,7 @@
 
     <script>
         const { createApp } = Vue;
+        
         createApp({
             data() {
                 return {
@@ -197,13 +247,13 @@
             methods: {
                 addSkillTag() {
                     const skill = this.skillInput.trim();
-                    if (skill && !this.skillTags.includes(skill)) {
-                        this.skillTags.push(skill);
+                    if (skill && !this.skillTags.includes(skill)) { 
+                        this.skillTags.push(skill); 
                     }
                     this.skillInput = '';
                 },
-                removeSkillTag(idx) {
-                    this.skillTags.splice(idx, 1);
+                removeSkillTag(idx) { 
+                    this.skillTags.splice(idx, 1); 
                 },
                 calculateAffinity(jobSkillsStr) {
                     if (!jobSkillsStr || this.skillTags.length === 0) return '0%';
@@ -214,78 +264,96 @@
                     return `${matching}/${job.length} (${Math.round((matching / job.length) * 100)}%)`;
                 },
                 async fetchProfile() {
-                    const res = await fetch('/api/student/profile', { headers: { 'Authorization': `Bearer ${this.token}` } });
-                    if (res.ok) {
-                        const data = await res.json();
-                        this.profile = data;
-                        if (data.skills) {
-                            this.skillTags = data.skills.split(',').filter(s => s);
-                        }
+                    const res = await fetch('/api/student/profile', { 
+                        headers: { 'Authorization': `Bearer ${this.token}` } 
+                    });
+                    if (res.ok) { 
+                        this.profile = await res.json(); 
+                        if (this.profile.skills) { 
+                            this.skillTags = this.profile.skills.split(',').filter(s => s); 
+                        } 
                     }
                 },
                 async updateProfile() {
                     this.profile.skills = this.skillTags.join(',');
                     const res = await fetch('/api/student/profile', { 
                         method: 'PUT', 
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` }, 
+                        headers: { 
+                            'Content-Type': 'application/json', 
+                            'Authorization': `Bearer ${this.token}` 
+                        }, 
                         body: JSON.stringify(this.profile) 
                     });
-                    
-                    let errorMsg = 'Failed to update profile details';
-                    if (!res.ok) {
-                        try {
-                            const data = await res.json();
-                            errorMsg = data.msg || errorMsg;
-                        } catch(e) {}
-                        alert(errorMsg);
-                    } else {
-                        alert('Profile saved successfully');
-                    }
+                    if (res.ok) alert('Profile saved successfully');
                 },
                 async fetchJobs() {
-                    const res = await fetch(`/api/student/jobs?search=${this.searchQuery}`, { headers: { 'Authorization': `Bearer ${this.token}` } });
+                    const res = await fetch(`/api/student/jobs?search=${this.searchQuery}`, { 
+                        headers: { 'Authorization': `Bearer ${this.token}` } 
+                    });
                     if (res.ok) this.jobs = await res.json();
                 },
                 async fetchApplications() {
-                    const res = await fetch('/api/student/applications', { headers: { 'Authorization': `Bearer ${this.token}` } });
+                    const res = await fetch('/api/student/applications', { 
+                        headers: { 'Authorization': `Bearer ${this.token}` } 
+                    });
                     if (res.ok) this.applications = await res.json();
                 },
                 async applyForJob(jobId) {
                     const res = await fetch('/api/student/apply', { 
                         method: 'POST', 
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.token}` }, 
+                        headers: { 
+                            'Content-Type': 'application/json', 
+                            'Authorization': `Bearer ${this.token}` 
+                        }, 
                         body: JSON.stringify({ job_id: jobId }) 
                     });
-                    if (res.ok) { 
-                        this.fetchApplications(); 
-                    } else { 
-                        let errorMsg = 'Application failed';
-                        try {
-                            const data = await res.json();
-                            errorMsg = data.msg || errorMsg;
-                        } catch(e) {}
-                        alert(errorMsg); 
-                    }
+                    if (res.ok) this.fetchApplications();
                 },
                 async acceptJobOffer(appId) {
-                    if (!confirm('Are you sure you want to accept this job offer? This will finalize your placement.')) return;
-                    const res = await fetch(`/api/student/applications/${appId}/accept`, {
-                        method: 'PUT',
-                        headers: { 'Authorization': `Bearer ${this.token}` }
+                    if (!confirm('Are you sure you want to accept this job offer?')) return;
+                    const res = await fetch(`/api/student/applications/${appId}/accept`, { 
+                        method: 'PUT', 
+                        headers: { 'Authorization': `Bearer ${this.token}` } 
                     });
-                    if (res.ok) {
-                        alert('Congratulations! Offer accepted successfully.');
-                        this.fetchApplications();
-                    } else {
-                        let errorMsg = 'Failed to accept offer';
-                        try {
-                            const data = await res.json();
-                            errorMsg = data.msg || errorMsg;
-                        } catch(e) {}
-                        alert(errorMsg);
+                    if (res.ok) { 
+                        alert('Congratulations! Offer accepted successfully.'); 
+                        this.fetchApplications(); 
                     }
                 },
-                logout() { localStorage.clear(); window.location.href = '/'; }
+                async triggerCsvExport() {
+                    const res = await fetch('/api/export/trigger', { 
+                        method: 'POST', 
+                        headers: { 'Authorization': `Bearer ${this.token}` } 
+                    });
+                    if (res.ok) { 
+                        alert('CSV export triggered via Celery. Polling database...'); 
+                        this.pollExportStatus(); 
+                    }
+                },
+                async pollExportStatus() {
+                    const interval = setInterval(async () => {
+                        const res = await fetch('/api/export/status', { 
+                            headers: { 'Authorization': `Bearer ${this.token}` } 
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.status === 'completed') { 
+                                clearInterval(interval); 
+                                alert('Export complete! Downloading your CSV history file.'); 
+                                const link = document.createElement('a');
+                                link.href = data.download_url;
+                                link.setAttribute('download', '');
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                            }
+                        }
+                    }, 2000);
+                },
+                logout() {
+                    localStorage.clear(); 
+                    window.location.href = '/'; 
+                }
             }
         }).mount('#app');
     </script>

@@ -1,4 +1,7 @@
--- users table
+import sqlite3
+from werkzeug.security import generate_password_hash
+
+SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
@@ -7,7 +10,6 @@ CREATE TABLE IF NOT EXISTS users (
     is_active BOOLEAN DEFAULT 1
 );
 
--- companies table
 CREATE TABLE IF NOT EXISTS companies (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -19,7 +21,6 @@ CREATE TABLE IF NOT EXISTS companies (
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
--- students table
 CREATE TABLE IF NOT EXISTS students (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -34,7 +35,6 @@ CREATE TABLE IF NOT EXISTS students (
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
--- job positions table
 CREATE TABLE IF NOT EXISTS job_positions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     company_id INTEGER NOT NULL,
@@ -46,7 +46,6 @@ CREATE TABLE IF NOT EXISTS job_positions (
     FOREIGN KEY (company_id) REFERENCES companies (id)
 );
 
--- applications table
 CREATE TABLE IF NOT EXISTS applications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     student_id INTEGER NOT NULL,
@@ -57,3 +56,18 @@ CREATE TABLE IF NOT EXISTS applications (
     FOREIGN KEY (student_id) REFERENCES students (id),
     FOREIGN KEY (job_id) REFERENCES job_positions (id)
 );
+"""
+
+conn = sqlite3.connect('placement_portal.sqlite3')
+cur = conn.cursor()
+
+conn.executescript(SCHEMA_SQL)
+
+cur.execute("SELECT id FROM users WHERE email = 'admin@institute.edu'")
+if not cur.fetchone():
+    hashed_pw = generate_password_hash('admin_secure_password')
+    cur.execute("INSERT INTO users (email, password, role) VALUES (?, ?, 'Admin')", ('admin@institute.edu', hashed_pw))
+
+conn.commit()
+conn.close()
+print("DB initialized")
